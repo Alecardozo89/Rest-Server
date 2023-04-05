@@ -2,13 +2,20 @@ const {response, request} = require('express');
 const bcryptjs = require('bcryptjs');
 const Usuario = require('../models/usuario');
 
-const usuariosGet = (req=request, res=response) =>{
-    const {q, nombre, apikey} = req.query;
+const usuariosGet = async(req=request, res=response) =>{
+    //const {q, nombre, apikey} = req.query;
+    const {limite=5, desde=0}= req.query;
+    const query = {estado: true}
+
+    const [total, usuario] = await Promise.all([
+        Usuario.countDocuments(query),
+        Usuario.find(query)
+            .skip(Number(desde))
+            .limit(Number(limite))
+    ])
     res.json({
-        msg: 'get API',
-        q,
-        nombre,
-        apikey
+        total,
+        usuario
     });
 };
 
@@ -35,16 +42,13 @@ const usuariosPut = async(req, res=response) =>{
         resto.password = bcryptjs.hashSync(password, salt);
     }
     const usuario = await Usuario.findByIdAndUpdate(id, resto, {new:true});
-    res.json({
-        msg: 'put API',
-        usuario
-    });
+    res.json(usuario);
 };
 
-const usuariosDelete = (req, res=response) =>{
-    res.json({
-        msg: 'delete API'
-    });
+const usuariosDelete = async(req, res=response) =>{
+    const {id} = req.params;
+    const usuario = await Usuario.findByIdAndUpdate(id, {estado: false});
+    res.json(usuario);
 };
 
 const usuariosPath = (req, res=response) =>{
